@@ -14,6 +14,7 @@ eps = 0.01
 L_cases = [50, 100, 200, 500]
 time_array = np.arange(0, T + delta_t, delta_t)
 
+# ── Functions ───────────────────────────────────────────────────────────────
 def Swamee_jain(Re, ks, D):
     f = 0.25 / (np.log10(ks/(3.7*D) + 5.74/Re**0.9))**2
     return f
@@ -45,6 +46,7 @@ def velocity_time_series(H, D, L, ks, rho, μ, delta_t):
 
     return velocity_series
 
+# ── Main Execution ─────────────────────────────────────────────────────────
 for L in L_cases:
     Vs = steady_state_velocity(H, D, L, ks, rho, μ)
     velocity_series = velocity_time_series(H, D, L, ks, rho, μ, delta_t)
@@ -57,6 +59,8 @@ for L in L_cases:
             break
 
     plt.plot(time_array, velocity_series, label=f'L={L} m')
+
+# ── Plot Options ────────────────────────────────────────────────────────────
 plt.axhline(y=Vs, color='r', linestyle='--', label='Steady-State Velocity')
 plt.title('Velocity Time Series for Different Pipe Lengths')
 plt.xlabel('Time (s)')
