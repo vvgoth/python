@@ -61,7 +61,7 @@ for L in L_cases:
     plt.plot(time_array, velocity_series, label=f'L={L} m')
 
 # ── Plot Options ────────────────────────────────────────────────────────────
-plt.axhline(y=Vs, color='r', linestyle='--', label='Steady-State Velocity')
+plt.axhline(y=Vs, color='C9', linestyle='--', linewidth=1, label='Steady-State Velocity')
 plt.title('Velocity Time Series for Different Pipe Lengths')
 plt.xlabel('Time (s)')
 plt.ylabel('Velocity (m/s)')
