@@ -60,12 +60,16 @@ for L in L_cases:
 
     plt.plot(time_array, velocity_series, label=f'L={L} m')
 
+    # Mark the settling time on the plot and annotate (Ts expected to be found)
+    plt.scatter(Ts, VTs, s=60, marker='D', edgecolor='k', facecolor='tab:orange', zorder=6, label='_nolegend_')
+    plt.annotate(f'Ts={Ts:.1f}s', xy=(Ts, VTs), xytext=(8,8), textcoords='offset points', fontsize=9,
+                 bbox=dict(boxstyle='round,pad=0.2', fc='yellow', alpha=0.8))
+    plt.axvline(Ts, color='gray', linestyle='--', linewidth=0.9, alpha=0.7)
+
 # ── Plot Options ────────────────────────────────────────────────────────────
-plt.axhline(y=Vs, color='C9', linestyle='--', linewidth=1, label='Steady-State Velocity')
 plt.title('Velocity Time Series for Different Pipe Lengths')
 plt.xlabel('Time (s)')
 plt.ylabel('Velocity (m/s)')
 plt.legend()
 plt.grid()
 plt.show()
-
