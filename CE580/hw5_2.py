@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def run_simulation(N, dt=0.0008):
+def run_simulation(N, dt=0.0008, save_interval=0.1):
     # Physical parameters
     g = 9.81           # gravity (m/s^2)
     W = 1.0            # channel width (m)
@@ -14,7 +14,7 @@ def run_simulation(N, dt=0.0008):
 
     # Numerical parameters
     dx = L / (N - 1)
-    n_cycles = 10
+    n_cycles = 50
     t_end = n_cycles * T
     nt = int(t_end / dt)
 
@@ -30,7 +30,7 @@ def run_simulation(N, dt=0.0008):
     pw = W + 2.0 * h
     C = Cf * u * np.abs(u) * pw / (2.0 * W)
 
-    # Storage for plots
+    # Storage for homework plots
     time_history = np.zeros(nt + 1)
     dt_allow_history = np.zeros(nt + 1)
 
@@ -42,6 +42,15 @@ def run_simulation(N, dt=0.0008):
 
     h_left_history[0] = h[0]
     h_right_history[0] = h[-1]
+
+    # Storage for Tecplot export
+    save_every = int(save_interval / dt)
+    if save_every < 1:
+        save_every = 1
+
+    saved_times = [0.0]
+    saved_h = [h.copy()]
+    saved_u = [u.copy()]
 
     # Time loop
     for n in range(nt):
@@ -95,64 +104,51 @@ def run_simulation(N, dt=0.0008):
         pw = W + 2.0 * h
         C = Cf * u * np.abs(u) * pw / (2.0 * W)
 
-        # Save results
+        # Save homework results
         time_history[n + 1] = t + dt
         dt_allow_history[n + 1] = np.min(dx / (np.abs(u) + np.sqrt(g * h)))
         h_left_history[n + 1] = h[0]
         h_right_history[n + 1] = h[-1]
 
-    return x, h, time_history, dt_allow_history, h_left_history, h_right_history
+        # Save Tecplot snapshots
+        if (n + 1) % save_every == 0:
+            saved_times.append(t + dt)
+            saved_h.append(h.copy())
+            saved_u.append(u.copy())
+
+    return x, h, time_history, dt_allow_history, h_left_history, h_right_history, saved_times, saved_h, saved_u, h0
+
+
+def export_to_tecplot_water(filename, x, saved_times, saved_h, saved_u, h0):
+    with open(filename, 'w') as f:
+        f.write('TITLE = "HW5 Shallow Water Basin"\n')
+        f.write('VARIABLES = "X", "Y", "H", "ETA", "U"\n')
+
+        for k, t in enumerate(saved_times):
+            h = saved_h[k]
+            u = saved_u[k]
+            eta = h - h0
+
+            f.write(
+                f'ZONE T="t={t:.4f}s", I={len(x)}, J=2, '
+                f'ZONETYPE=Ordered, DATAPACKING=POINT, '
+                f'STRANDID=1, SOLUTIONTIME={t:.6f}\n'
+            )
+
+            # Bottom row: basin floor
+            for i in range(len(x)):
+                f.write(f'{x[i]:.8f} {0.0:.8f} {h[i]:.8f} {eta[i]:.8f} {u[i]:.8f}\n')
+
+            # Top row: free surface
+            for i in range(len(x)):
+                f.write(f'{x[i]:.8f} {h[i]:.8f} {h[i]:.8f} {eta[i]:.8f} {u[i]:.8f}\n')
 
 
 # Base run for N = 2001
-x, h_final, time_history, dt_allow_history, h_left_history, h_right_history = run_simulation(2001)
+x, h_final, time_history, dt_allow_history, h_left_history, h_right_history, saved_times, saved_h, saved_u, h0 = run_simulation(
+    2001, dt=0.0008, save_interval=0.1
+)
 
-# Allowable time-step size as a function of time
-plt.figure(figsize=(10, 6))
-plt.plot(time_history, dt_allow_history, linewidth=1.5)
-plt.xlabel('Time (s)')
-plt.ylabel('Allowable time step (s)')
-plt.title('Allowable time-step size as a function of time')
-plt.grid(True)
-plt.tight_layout()
-
-# Water surface level at both ends of the basin
-plt.figure(figsize=(10, 6))
-plt.plot(time_history, h_left_history, linewidth=1.5, label='x = 0 m')
-plt.plot(time_history, h_right_history, linewidth=1.5, label='x = 20 m')
-plt.xlabel('Time (s)')
-plt.ylabel('Water surface level h (m)')
-plt.title('Water surface level at both ends of the basin')
-plt.ylim(0, 14)
-plt.legend()
-plt.grid(True)
-plt.tight_layout()
-
-# Water surface profile at the end of the 10th wave cycle
-eta_final = h_final - 12.0
-
-plt.figure(figsize=(10, 6))
-plt.plot(x, eta_final, linewidth=1.5)
-plt.xlabel('x (m)')
-plt.ylabel(r'Water surface fluctuation $\eta$ (m)')
-plt.title('Water surface profile at the end of the 10th wave cycle')
-plt.grid(True)
-plt.tight_layout()
-
-# Comparison of final water surface profiles for different mesh sizes
-mesh_sizes = [201, 501, 1001, 2001]
-
-plt.figure(figsize=(10, 6))
-
-for N in mesh_sizes:
-    x_mesh, h_mesh, _, _, _, _ = run_simulation(N)
-    eta_mesh = h_mesh - 12.0
-    plt.plot(x_mesh, eta_mesh, linewidth=1.5, label=f'N = {N}')
-
-plt.xlabel('x (m)')
-plt.ylabel(r'Water surface fluctuation $\eta$ (m)')
-plt.title('Final water surface profiles for different mesh sizes')
-plt.legend()
-plt.grid(True)
-plt.tight_layout()
-plt.show()
+# Tecplot export
+export_to_tecplot_water("hw5_basin_water.dat", x, saved_times, saved_h, saved_u, h0)
+print("Tecplot file written: hw5_basin_water.dat")
